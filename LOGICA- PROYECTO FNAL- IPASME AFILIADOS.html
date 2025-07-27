@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Afiliación IPASME</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .logo-section {
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-ipasme {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #2c5aa0, #1e3d72);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            box-shadow: 0 15px 35px rgba(44, 90, 160, 0.4);
+            animation: logoFloat 3s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-ipasme::before {
+            content: "🏛️";
+            font-size: 2.8rem;
+            color: white;
+            z-index: 2;
+        }
+
+        .logo-ipasme::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .logo-section h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .logo-section p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            color: #34495e;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-consultar {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-consultar:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-consultar:active {
+            transform: translateY(-1px);
+        }
+
+        .resultado {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        .afiliado {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            border-left: 5px solid #229954;
+        }
+
+        .no-afiliado {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border-left: 5px solid #a93226;
+        }
+
+        .error {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+            border-left: 5px solid #d68910;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .info-section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .logo-section h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-section">
+            <div class="logo-ipasme"></div>
+            <h1>IPASME</h1>
+            <p>Instituto de Previsión y Asistencia Social</p>
+            <p style="font-size: 0.9rem; color: #6c757d;">para el personal del Ministerio de Educación</p>
+            <p style="font-size: 1.1rem; color: #2c5aa0; font-weight: 600; margin-top: 10px;">Sistema de Consulta de Afiliación</p>
+        </div>
+
+        <form id="consultaForm">
+            <div class="form-group">
+                <label for="cedula">Cédula de Identidad:</label>
+                <input 
+                    type="text" 
+                    id="cedula" 
+                    name="cedula" 
+                    placeholder="Ej: V12345678 o 12345678"
+                    required
+                >
+            </div>
+            
+            <button type="submit" class="btn-consultar">
+                Consultar Estatus
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Consultando...</p>
+        </div>
+
+        <div id="resultado" class="resultado"></div>
+
+        <div class="info-section">
+            <h3>Información Importante</h3>
+            <p>
+                Este sistema consulta en tiempo real la base de datos oficial de afiliados IPASME. 
+                Si su cédula no aparece como afiliada, diríjase a la oficina de atención más cercana 
+                para completar su proceso de afiliación.
+            </p>
+            <p style="margin-top: 15px; font-size: 0.9rem; color: #6c757d;">
+                <strong>Horarios de Atención:</strong> Lunes a Viernes de 8:00 AM a 4:00 PM<br>
+                <strong>Para más información:</strong> Contacte su oficina regional IPASME
+            </p>
+            <p style="margin-top: 10px; font-size: 0.8rem; color: #95a5a6;">
+                🔗 Sistema conectado a base de datos oficial IPASME<br>
+                🔒 Consulta segura y confidencial
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Configuración para Google Sheets
+        const GOOGLE_SHEETS_CONFIG = {
+            apiKey: 'AIzaSyBLYujNnKjhtBMeoWbS5yxcXc6NCr1oRBI',
+            spreadsheetId: '18-LXPgqkjTcdyxNn_OmCC8IjrCBJBdBzRWsB7K7s4no',
+            range: "IPASME-GAG-VERIFICACIÓN DE AFILIACIÓN!A:A" // Usando comillas dobles y formato correcto
+        };
+
+        document.getElementById('consultaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const cedula = document.getElementById('cedula').value.trim().toUpperCase();
+            const loading = document.getElementById('loading');
+            const resultado = document.getElementById('resultado');
+            
+            // Validar formato de cédula
+            if (!validarCedula(cedula)) {
+                mostrarResultado('Por favor, ingrese una cédula válida (Ej: V12345678)', 'error');
+                return;
+            }
+            
+            // Mostrar loading
+            loading.style.display = 'block';
+            resultado.style.display = 'none';
+            
+            try {
+                // Simular delay de consulta
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Aquí puedes elegir usar Google Sheets o la base de datos local
+                const estaAfiliado = await consultarAfiliacion(cedula);
+                
+                if (estaAfiliado) {
+                    mostrarResultado(
+                        '✅ AFILIADO ACTIVO<br><br>Usted está registrado en el sistema IPASME.<br><strong>Puede ser atendido en consulta.</strong>',
+                        'afiliado'
+                    );
+                } else {
+                    mostrarResultado(
+                        '❌ NO AFILIADO<br><br>Su cédula no se encuentra en nuestros registros.<br><strong>Diríjase a una oficina de atención IPASME para completar su afiliación.</strong>',
+                        'no-afiliado'
+                    );
+                }
+            } catch (error) {
+                console.error('Error en la consulta:', error);
+                mostrarResultado(
+                    `⚠️ ${error.message}<br><br>Por favor, verifique que la hoja de Google Sheets sea pública y accesible.`,
+                    'error'
+                );
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function validarCedula(cedula) {
+            // Remover espacios y convertir a mayúsculas
+            cedula = cedula.replace(/\s/g, '').toUpperCase();
+            
+            // Validar formato: opcional V/E + 6-8 dígitos
+            const patron = /^[VE]?\d{6,8}$/;
+            return patron.test(cedula);
+        }
+
+        function normalizarCedula(cedula) {
+            // Remover espacios y convertir a mayúsculas
+            cedula = cedula.replace(/\s/g, '').toUpperCase();
+            
+            // Si no tiene letra, agregar V por defecto
+            if (/^\d+$/.test(cedula)) {
+                cedula = 'V' + cedula;
+            }
+            
+            return cedula;
+        }
+
+        async function consultarAfiliacion(cedula) {
+            cedula = normalizarCedula(cedula);
+            
+            // Consultar directamente en Google Sheets
+            return await consultarGoogleSheets(cedula);
+        }
+
+        async function consultarGoogleSheets(cedula) {
+            try {
+                // Si ya encontramos un formato exitoso, usarlo
+                if (GOOGLE_SHEETS_CONFIG.formatoExitoso) {
+                    return await consultarConRango(cedula, GOOGLE_SHEETS_CONFIG.formatoExitoso);
+                }
+                
+                // Si no, probar diferentes formatos
+                const formatosRango = [
+                    "IPASME-GAG-VERIFICACIÓN DE AFILIACIÓN!A:A",
+                    "'IPASME-GAG-VERIFICACIÓN DE AFILIACIÓN'!A:A", 
+                    "IPASME-GAG-VERIFICACI%C3%93N%20DE%20AFILIACI%C3%93N!A:A",
+                    "'IPASME-GAG-VERIFICACI%C3%93N%20DE%20AFILIACI%C3%93N'!A:A",
+                    "A:A"
+                ];
+                
+                for (const rango of formatosRango) {
+                    try {
+                        console.log(`🔍 Probando formato: ${rango}`);
+                        const resultado = await consultarConRango(cedula, rango);
+                        // Si llegamos aquí, el formato funciona
+                        GOOGLE_SHEETS_CONFIG.formatoExitoso = rango;
+                        console.log(`✅ Formato exitoso guardado: ${rango}`);
+                        return resultado;
+                    } catch (error) {
+                        console.log(`❌ Formato falló: ${rango}`);
+                        continue;
+                    }
+                }
+                
+                // Si ningún formato funciona
+                throw new Error('❌ NO SE PUDO ACCEDER A LA HOJA: Verifique el nombre de la pestaña o cambie el nombre a algo simple como "AFILIADOS"');
+                
+            } catch (error) {
+                console.error('💥 Error en consultarGoogleSheets:', error);
+                throw error;
+            }
+        }
+
+        async function consultarConRango(cedula, rango) {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEETS_CONFIG.spreadsheetId}/values/${encodeURIComponent(rango)}?key=${GOOGLE_SHEETS_CONFIG.apiKey}`;
+            
+            console.log('📡 Consultando:', url);
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.values || data.values.length === 0) {
+                throw new Error('La hoja está vacía o no tiene datos');
+            }
+            
+            // Procesar los datos (omitir encabezado)
+            const todasLasCedulas = data.values
+                .slice(1) // Omitir primera fila (encabezado)
+                .flat()
+                .filter(c => c && c.toString().trim()) // Filtrar valores vacíos
+                .map(c => normalizarCedula(c.toString().trim()));
+            
+            console.log('📝 Total de cédulas encontradas:', todasLasCedulas.length);
+            console.log('🎯 Buscando:', cedula);
+            
+            return todasLasCedulas.includes(cedula);
+        }
+
+        function mostrarResultado(mensaje, tipo) {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = mensaje;
+            resultado.className = `resultado ${tipo}`;
+            resultado.style.display = 'block';
+        }
+
+        // Permitir solo números, V y E en el campo de cédula
+        document.getElementById('cedula').addEventListener('input', function(e) {
+            let valor = e.target.value.toUpperCase();
+            valor = valor.replace(/[^VE0-9]/g, '');
+            
+            // Limitar a una sola letra al inicio
+            if (valor.length > 1 && /^[VE][VE]/.test(valor)) {
+                valor = valor.substring(0, 1) + valor.substring(1).replace(/[VE]/g, '');
+            }
+            
+            e.target.value = valor;
+        });
+    </script>
+</body>
+</html>
